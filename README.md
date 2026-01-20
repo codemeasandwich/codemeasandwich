@@ -50,7 +50,6 @@
 
 | Project | Description |
 |---------|-------------|
-| [everything-claude-code](https://github.com/codemeasandwich/everything-claude-code) | Complete Claude Code configuration collection - hooks, MCP servers, and advanced agent setups. |
 | [MCP-atom](https://github.com/codemeasandwich/MCP-atom) | JavaScript framework for building MCP servers and automation tools. |
 | [BRI](https://github.com/codemeasandwich/BRI) | Natural language interface for database queries - talk to your data. |
 
@@ -72,12 +71,3 @@
 
 ![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=codemeasandwich&layout=compact&hide_border=true)
 
-## Connect
-
-```
-   ╭──────────────────────────────────────────────────╮
-   │  📍 Location: Europe (Volcano Lair)              │
-   │  🎯 Focus: Full-stack JS, GraphQL, AI tooling    │
-   │  🤝 Open to: Collaborations & mentoring          │
-   ╰──────────────────────────────────────────────────╯
-```
