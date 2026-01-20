@@ -1,4 +1,4 @@
-![The AI & JS guy](TKcmR.gif)
+![The AI & JS guy](https://raw.githubusercontent.com/codemeasandwich/codemeasandwich/main/TKcmR.gif)
 
 **Full-Stack Developer | AI & JavaScript Specialist | Startup Mentor**
 
