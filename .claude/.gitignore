@@ -1,0 +1,25 @@
+# Session data
+*.jsonl
+*-state.json
+*.log
+keywords.json
+stats-cache.json
+
+# User data directories
+projects/
+todos/
+debug/
+shell-snapshots/
+file-history/
+downloads/
+session-env/
+pool/
+
+# IDE/telemetry
+ide/
+telemetry/
+statsig/
+cache/
+
+# Nested claude folder
+.claude/

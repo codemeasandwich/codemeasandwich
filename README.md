@@ -22,4 +22,22 @@
 [![MongoDB](https://img.shields.io/badge/-MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://github.com/codemeasandwich/mongoose-model-stream)
 [![Logging](https://img.shields.io/badge/-Logging-000000?style=flat-square&logo=gnuemacs&logoColor=white)](https://github.com/codemeasandwich/scribbles)
 
+---
 
+## My Claude Code Configuration
+
+I share my [Claude Code](https://claude.ai/code) AI agent configuration publicly. Feel free to explore or use it as inspiration for your own setup.
+
+**What's included:**
+- **Custom Agents** - Specialized roles (architect, code-reviewer, tdd-guide, etc.)
+- **Workflow Phases** - Structured development methodology
+- **Scripts** - Context routing and automation tools
+- **Hooks** - Pre/post tool use automation
+
+**[Browse the config](.claude/)**
+
+### Quick Start
+To use this configuration:
+1. Copy the `.claude/` folder to your home directory (`~/.claude/`)
+2. Customize `CLAUDE.md` with your preferences
+3. Review `settings.json` for permission settings

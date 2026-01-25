@@ -1,0 +1,114 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(git clean:*)",
+      "WebSearch",
+      "WebFetch",
+      "Bash(ls -la)",
+      "Bash(echo:*)",
+      "Bash(cat:*)",
+      "Bash(find:*)",
+      "Bash(cd:*)",
+      "Bash(head:*)",
+      "Bash(wc:*)",
+      "Bash(du:*)",
+      "Bash(gh help:*)",
+      "Bash(gh version:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh status:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh repo list:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "Bash(gh pr checks:*)",
+      "Bash(gh pr status:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh release list:*)",
+      "Bash(gh release view:*)",
+      "Bash(gh gist list:*)",
+      "Bash(gh gist view:*)",
+      "Bash(gh workflow list:*)",
+      "Bash(gh workflow view:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(gh run watch:*)",
+      "Bash(gh search repos:*)",
+      "Bash(gh search issues:*)",
+      "Bash(gh search prs:*)",
+      "Bash(gh search commits:*)",
+      "Bash(gh alias list:*)",
+      "Bash(gh config list:*)",
+      "Bash(gh api GET:*)",
+      "Bash(gh api graphql:*)"
+    ]
+  },
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/scripts/context-router-v2.js"
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/scripts/pool-auto-update.js"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'TARS by Brian (https://github.com/codemeasandwich)'"
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/scripts/pool-loader.js"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Before editing: Have you re-read the task plan in todo/ to prevent goal drift?'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Reminder: Update the task tracking file in todo/ (2-action rule)'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Before stopping: Is the session log updated? Any handoff notes needed?'"
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/scripts/pool-extractor.js"
+          }
+        ]
+      }
+    ]
+  }
+}

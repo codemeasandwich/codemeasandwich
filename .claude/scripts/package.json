@@ -1,0 +1,12 @@
+{
+  "name": "claude-hooks",
+  "version": "1.0.0",
+  "description": "Claude Code hook scripts",
+  "scripts": {
+    "test": "node --test",
+    "test:coverage": "c8 node --test"
+  },
+  "devDependencies": {
+    "c8": "^8.0.0"
+  }
+}
