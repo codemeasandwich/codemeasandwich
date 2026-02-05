@@ -4,6 +4,8 @@
 *.log
 keywords.json
 stats-cache.json
+settings.local.json
+*.zip
 
 # User data directories
 projects/
@@ -14,6 +16,7 @@ file-history/
 downloads/
 session-env/
 pool/
+plans/
 
 # IDE/telemetry
 ide/
@@ -23,3 +26,7 @@ cache/
 
 # Nested claude folder
 .claude/
+
+# Keep local only
+vscode-persona-switcher/
+bin/

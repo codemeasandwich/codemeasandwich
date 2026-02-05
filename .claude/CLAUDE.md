@@ -77,6 +77,100 @@ Tasks:
 - **Implementation phase:** Match to isolated file count (typically 2-4)
 - **Validation phase:** 4 agents max (tests, lint, types, build)
 
+### Sub-Agent Tool Permissions
+
+When launching sub-agents that need file access, **always specify `allowed_tools`** explicitly:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  allowed_tools: ["Read", "Write", "Edit"],
+  prompt: "..."
+)
+```
+
+**Why:** Sub-agents don't automatically inherit file CRUD permissions. Without `allowed_tools`, they can only use read-only tools (Glob, Grep, Read for Explore agents).
+
+**When to include file tools:**
+- `Read` - Sub-agent needs to read file contents
+- `Write` - Sub-agent needs to create new files
+- `Edit` - Sub-agent needs to modify existing files
+- `Bash(git *)` - Sub-agent needs git operations
+
+User will be prompted to approve these tools per-session (not pre-approved globally).
+
+### Isolation Mode (Worktree-Based Parallelization)
+
+For high-collision-risk parallel work, use **isolation mode** to give each agent its own filesystem via git worktrees. Supports **nested isolation** - top-level agents can spawn their own isolated sub-agents.
+
+**Auto-Triggers (recommend isolation when):**
+- 3+ agents with file write permissions
+- Multiple agents targeting same directory
+- Agents modifying shared types/interfaces
+- Long-running implementation agents (>5 tool calls)
+
+**Manual Override:**
+- `[isolation: required]` - Force isolation mode
+- `[isolation: disabled]` - Use standard mode
+
+**Launching Isolated Agents:**
+```bash
+# 1. Setup worktree (returns absolute path)
+AGENT_PATH=$(bash ~/.claude/scripts/isolation-mode.sh setup agent-1)
+
+# 2. Launch agent with modified CWD
+Task(
+  subagent_type: "general-purpose",
+  allowed_tools: ["Read", "Write", "Edit", "Bash(*)"],
+  prompt: "WORKING DIRECTORY: $AGENT_PATH\n\nYour task..."
+)
+
+# 3. After agent completes, merge
+bash ~/.claude/scripts/isolation-mode.sh merge agent-1
+
+# 4. Cleanup
+bash ~/.claude/scripts/isolation-mode.sh teardown agent-1
+```
+
+**Nested Isolation (agents spawning sub-agents):**
+```bash
+# Top-level agent can spawn its own isolated children:
+cd $AGENT_PATH  # In the top-level agent's worktree
+SUB_PATH=$(bash ~/.claude/scripts/isolation-mode.sh setup sub-1a)
+
+# Sub-agent works in $SUB_PATH...
+
+# When sub-agents complete, merge bottom-up:
+bash ~/.claude/scripts/isolation-mode.sh merge-children  # merges all children
+git add . && git commit -m "Consolidated sub-work"
+
+# Then parent (main) merges this agent
+cd /project-root
+bash ~/.claude/scripts/isolation-mode.sh merge agent-1
+```
+
+**Constraints:**
+- Max 6 agents per level (each parent can have up to 6 children)
+- node_modules symlinked from project root - do NOT modify package.json in isolation
+- Pre-commit hooks skip worktrees (run once on final merge to main)
+
+**Merge Order:** Always bottom-up (deepest children first → parents → main)
+
+**Commands:**
+| Command | Description |
+|---------|-------------|
+| `setup <id>` | Create isolated worktree for agent |
+| `teardown <id>` | Remove agent's worktree (recursive) |
+| `merge <id>` | Merge agent's branch to current |
+| `merge-children` | Merge all children at this level |
+| `cleanup-all` | Remove all worktrees (recursive) |
+| `status` | Show worktree tree structure |
+| `tree` | Show all isolation branches |
+
+**Never Skip Cleanup:** Always run `cleanup-all` at project root when done.
+
+**Project Setup:** Add `.worktrees/` to the project's `.gitignore` before using isolation mode.
+
 ## Testing Philosophy
 - ZERO unit tests - only integration/E2E tests
 - Test functionality, not functions - design tests around real user/developer workflows
@@ -84,23 +178,34 @@ Tasks:
 - Plan test cases by asking "what would a user/dev do to trigger this code?"
 - Identify dead code: if no realistic scenario triggers it, comment it out
 
-## task tracking
-**Location:** Always create the `todo/` folder in the CURRENT PROJECT directory.
+## Task Tracking
 
-The task tracking markdown file in the project's `todo/` folder covers:
+### Location & Structure
+**Always use feature folders:** `project/todo/[feature-name]/`
+
+### Plan Mode Integration
+**IGNORE Claude Code's default plan file location (`~/.claude/plans/`).**
+
+- **During plan mode:** Write all planning directly to `todo/[feature-name]/`
+- **Feature name is flexible** during plan mode - can rename as understanding evolves
+- **On exit plan mode:** The `[feature-name]` becomes the git branch (e.g., `feature/[feature-name]`, `hot-fix/[feature-name]`, etc.)
+- **Single source of truth** from brainstorming through completion
+
+### Content Coverage
+The feature folder should document:
 - the request/problem
 - research covered
 - research findings
 - **errors & failed approaches** — Log what didn't work and why
 - Complete and total set of user stories, requirements and flows
-- architecture out
+- architecture decisions
 - tasks & sub-tasks ← incrementally updated as code is tested & completed
 - **session log** — Timestamped activity log for recovery
 - project post-mortem
-- retrospective on improve development and communication
+- retrospective on improving development and communication
 
 ### Persistence Rule
-Save to the task tracking file after each step of every phase. This prevents knowledge loss during long sessions.
+Save to the feature folder after each step of every phase. This prevents knowledge loss during long sessions.
 
 ### Error Logging (Mandatory)
 - Log ALL failed approaches in the "errors & failed approaches" section
@@ -110,9 +215,9 @@ Save to the task tracking file after each step of every phase. This prevents kno
 
 ### Session Recovery
 When context fills and `/clear` is needed:
-1. Write a "handoff summary" to the task tracking file before clearing
+1. Write a "handoff summary" to the feature folder before clearing
 2. Include: current task, next steps, blockers, key decisions made
-3. After clearing, re-read the task tracking file immediately
+3. After clearing, re-read the feature folder immediately
 4. Resume from the documented state
 
 ---
@@ -122,7 +227,7 @@ When context fills and `/clear` is needed:
 
 ### Phase 1: Capture & Understand
 **Goal:** Document request, ensure mutual understanding.
-- Log request verbatim to todo/
+- Create `todo/[feature-name]/` folder and log request verbatim
 - Ask clarifying questions about intent, scope, constraints
 - Launch 2-3 Explore agents for unfamiliar codebases
 
@@ -189,8 +294,10 @@ When context fills and `/clear` is needed:
 - Run projects via Docker only - never run locally on host
 - Update npm scripts to enforce Docker usage
 
-### Required Packages (use these instead of use or build alternatives)
-Agent is encouraged to raise issues(features, improvement, bug, etc..) on github would any of the libraries if it will help the current project and work.
+### Required Packages for JS/TS Projects
+**Applies only when:** Planning or coding JavaScript/TypeScript projects.
+
+Use these instead of building alternatives. Agent is encouraged to raise issues (features, improvements, bugs, etc.) on GitHub for any of these libraries if it will help the current project.
 
 #### api-ape - Web API Framework
 - **What:** Real-time bidirectional WebSocket framework for browser-to-server communication to replace Rest end-points
@@ -293,6 +400,17 @@ When working on a project, if something seems counterintuitive yet is proven to 
 - Required workarounds for known issues
 - Non-obvious dependencies between components
 - Build/test commands that differ from standard tooling
+
+## GitHub CLI (`gh`) Commands
+
+When using `gh api` commands, **always use explicit HTTP methods with the `--method` flag**:
+- `gh api --method GET /users/...`
+- `gh api --method GET /repos/...`
+- `gh api --method POST /repos/.../issues`
+- `gh api --method PUT /repos/.../...`
+- `gh api --method DELETE /repos/.../...`
+
+This is required because permissions are scoped to explicit methods (e.g., `gh api --method GET:*` is allowed).
 
 ## Documentation Rewriting Policy
 

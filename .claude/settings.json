@@ -1,11 +1,18 @@
 {
   "permissions": {
     "allow": [
+      "Edit(todo/**/plan.md)",
       "Bash(git checkout:*)",
       "Bash(git clean:*)",
       "WebSearch",
       "WebFetch",
-      "Bash(ls -la)",
+      "Bash(ls:*)",
+      "Bash(awk:*)",
+      "Bash(grep:*)",
+      "Bash(xargs -I {} echo:*)",
+      "Bash(xargs -I {} ls:*)",
+      "Bash(xargs -I {} sh -c 'echo:*)",
+      "Bash(xargs -I {} find:*)",
       "Bash(echo:*)",
       "Bash(cat:*)",
       "Bash(find:*)",
@@ -41,8 +48,27 @@
       "Bash(gh search commits:*)",
       "Bash(gh alias list:*)",
       "Bash(gh config list:*)",
-      "Bash(gh api GET:*)",
-      "Bash(gh api graphql:*)"
+      "Bash(gh api --method GET:*)",
+      "Bash(gh api graphql:*)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(node test/coverage-report.mjs:*)",
+      "Bash(node test/functional-validation.test.mjs:*)",
+      "Read(//Users/bri/www/orchestration/**)",
+      "Bash(node --version:*)",
+      "Bash(node:*)",
+      "Bash(NODE_V8_COVERAGE=./coverage-tmp timeout 120 node --experimental-test-coverage --test:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(sort:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/bri/www/api-ape/.hooks/pre-commit.d",
+      "/Users/bri/.claude/sounds",
+      "/Users/bri/www/hyper-element/build",
+      "/Users/bri/www/orchestration/todo",
+      "/Users/bri/www/orchestration/src/swarm/measurement",
+      "/Users/bri/www/CliUI/todo"
     ]
   },
   "hooks": {
@@ -51,11 +77,23 @@
         "hooks": [
           {
             "type": "command",
+            "command": "bash ~/.claude/scripts/stop-waiting-sound.sh"
+          },
+          {
+            "type": "command",
             "command": "node ~/.claude/scripts/context-router-v2.js"
           },
           {
             "type": "command",
             "command": "node ~/.claude/scripts/pool-auto-update.js"
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/scripts/context-switch-validator.js"
+          },
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/user-prompt.mp3"
           }
         ]
       }
@@ -70,28 +108,84 @@
           {
             "type": "command",
             "command": "node ~/.claude/scripts/pool-loader.js"
+          },
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/session-start.mp3"
           }
         ]
       }
     ],
     "PreToolUse": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/pre-tool.mp3"
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
             "command": "echo 'Before editing: Have you re-read the task plan in todo/ to prevent goal drift?'"
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/scripts/doc-preservation-check.js"
+          }
+        ]
+      },
+      {
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Multi-agent task: Consider isolation mode if 3+ agents will write files. Run: bash ~/.claude/scripts/isolation-mode.sh status'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ~/.claude/scripts/coverage-gate.js"
+          },
+          {
+            "type": "command",
+            "command": "node ~/.claude/scripts/commit-message-validator.js"
           }
         ]
       }
     ],
     "PostToolUse": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/post-tool-success.mp3"
+          }
+        ]
+      },
+      {
         "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
             "command": "echo 'Reminder: Update the task tracking file in todo/ (2-action rule)'"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/post-tool-fail.mp3"
           }
         ]
       }
@@ -106,9 +200,84 @@
           {
             "type": "command",
             "command": "node ~/.claude/scripts/pool-extractor.js"
+          },
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/stop.mp3"
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/scripts/context-alert.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[$(date '+%Y-%m-%d %H:%M:%S')] Notification hook fired\" >> ~/.claude/.debug.log"
+          },
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/notification.mp3"
+          }
+        ]
+      },
+      {
+        "matcher": "permission_prompt|idle_prompt",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/scripts/waiting-sound.sh"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/subagent-start.mp3"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/subagent-stop.mp3"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/pre-compact.mp3"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay ~/.claude/sounds/session-end.mp3"
           }
         ]
       }
     ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline.sh"
   }
 }
