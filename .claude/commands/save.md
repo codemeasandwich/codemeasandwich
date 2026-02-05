@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*), Bash(git push:*), Bash(git pull:*)
+allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git commit:*), Bash(git push:*), Bash(git pull:*), Bash(git checkout:*), Bash(git merge:*), Bash(git branch:*), Bash(git symbolic-ref:*)
 description: Review changes and create a conventional commit
 ---
 
@@ -89,3 +89,64 @@ If the commit fails due to a pre-commit hook:
 6. Repeat until the commit succeeds
 
 This is mandatory. Pre-commit hooks exist to maintain code quality - bypassing them is never acceptable.
+
+## Post-Commit: Merge to Default Branch
+
+After the commit succeeds, offer to merge the changes to the default branch.
+
+### When to Skip
+- If already on main or master, skip this section entirely
+
+### Step 8: Ask About Merging
+
+Ask the user: **"Do you want to merge this branch to the default branch?"**
+
+If the user says no, the workflow is complete.
+
+### Step 9: Merge Workflow (if yes)
+
+1. **Detect the default branch:**
+   ```bash
+   git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@'
+   ```
+   - If that fails, check if `main` exists, otherwise use `master`
+
+2. **Store the current branch name** for later reference
+
+3. **Checkout the default branch:**
+   ```bash
+   git checkout [default-branch]
+   ```
+
+4. **Pull latest changes:**
+   ```bash
+   git pull origin [default-branch]
+   ```
+
+5. **Merge the feature branch:**
+   ```bash
+   git merge [feature-branch]
+   ```
+
+6. **Handle merge conflicts:**
+   - If merge conflicts occur, abort the merge: `git merge --abort`
+   - Checkout back to the feature branch
+   - Inform the user: "Merge conflicts detected. Please resolve manually."
+   - Stop the workflow
+
+7. **Push to origin:**
+   ```bash
+   git push origin [default-branch]
+   ```
+
+### Step 10: Ask About Branch Cleanup
+
+Ask the user: **"Delete the feature branch '[branch-name]'?"**
+
+- If yes: `git branch -d [feature-branch]`
+  - If that fails (unmerged commits), ask if they want to force delete with `git branch -D`
+- If no: Keep the branch
+
+### Step 11: Final State
+
+Stay on the default branch (main/master). Do not switch back to the feature branch.
